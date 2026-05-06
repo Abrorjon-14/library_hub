@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Folio — Your Personal Library{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="fade-up" style="background:linear-gradient(135deg,var(--ink) 0%,var(--ink-2) 60%,#3d2a6e 100%);border-radius:20px;padding:56px 48px;margin-bottom:36px;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:-40px;right:-40px;width:280px;height:280px;border-radius:50%;background:rgba(232,99,42,.15);pointer-events:none;"></div>
+  <div style="position:absolute;bottom:-60px;right:120px;width:180px;height:180px;border-radius:50%;background:rgba(245,166,35,.08);pointer-events:none;"></div>
+  <div style="position:relative;max-width:520px;">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(232,99,42,.2);border:1px solid rgba(232,99,42,.3);border-radius:100px;padding:5px 14px;font-size:12px;color:#f5a623;font-weight:600;letter-spacing:.5px;margin-bottom:20px;">
+      ✨ YOUR READING COMPANION
+    </div>
+    <h1 style="font-family:'DM Serif Display',serif;font-size:44px;color:white;line-height:1.1;letter-spacing:-1px;margin-bottom:16px;">
+      Discover your next<br><em style="color:var(--accent-2);">favourite book</em>
+    </h1>
+    <p style="color:rgba(255,255,255,.65);font-size:16px;line-height:1.65;margin-bottom:28px;">
+      Browse thousands of titles, track your reading journey, save wishlists, and share reviews with fellow readers.
+    </p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <a href="/books/" class="btn btn-primary" style="padding:13px 28px;font-size:15px;">Browse Books</a>
+      {% if not user.is_authenticated %}
+      <a href="/users/register/" class="btn btn-secondary" style="padding:13px 28px;font-size:15px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;">Join Free</a>
+      {% else %}
+      <a href="/reading/" class="btn btn-secondary" style="padding:13px 28px;font-size:15px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;">📑 My Reading</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- Feature tiles -->
+<div class="fade-up fade-up-1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:36px;">
+  {% for icon, title, desc in feats %}
+  <div class="card" style="text-align:center;padding:28px 20px;">
+    <div style="font-size:32px;margin-bottom:10px;">{{ icon }}</div>
+    <div style="font-weight:600;font-size:15px;margin-bottom:5px;color:var(--ink);">{{ title }}</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.5;">{{ desc }}</div>
+  </div>
+  {% empty %}
+  <div class="card" style="text-align:center;padding:28px 20px;">
+    <div style="font-size:32px;margin-bottom:10px;">📖</div>
+    <div style="font-weight:600;font-size:15px;margin-bottom:5px;">Browse Books</div>
+    <div style="font-size:13px;color:var(--muted);">Explore our growing collection</div>
+  </div>
+  <div class="card" style="text-align:center;padding:28px 20px;">
+    <div style="font-size:32px;margin-bottom:10px;">📄</div>
+    <div style="font-weight:600;font-size:15px;margin-bottom:5px;">Track Progress</div>
+    <div style="font-size:13px;color:var(--muted);">Save your page, anytime</div>
+  </div>
+  <div class="card" style="text-align:center;padding:28px 20px;">
+    <div style="font-size:32px;margin-bottom:10px;">❤️</div>
+    <div style="font-weight:600;font-size:15px;margin-bottom:5px;">Build Wishlist</div>
+    <div style="font-size:13px;color:var(--muted);">Save books you want to read</div>
+  </div>
+  <div class="card" style="text-align:center;padding:28px 20px;">
+    <div style="font-size:32px;margin-bottom:10px;">⭐</div>
+    <div style="font-weight:600;font-size:15px;margin-bottom:5px;">Write Reviews</div>
+    <div style="font-size:13px;color:var(--muted);">Share your reading thoughts</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if user.is_authenticated %}
+
+{% if continue_reading %}
+<!-- Continue Reading Banner -->
+<div class="card fade-up fade-up-2 cr-banner">
+  <div class="cr-cover">
+    {% if continue_reading.book.cover_image %}
+      <img src="{{ continue_reading.book.cover_image.url }}" alt="{{ continue_reading.book.title }}">
+    {% else %}
+      <div class="cr-cover-placeholder">📖</div>
+    {% endif %}
+  </div>
+  <div class="cr-body">
+    <div class="cr-eyebrow">📌 Continue Reading</div>
+    <div class="cr-title">{{ continue_reading.book.title }}</div>
+    <div class="cr-author">by {{ continue_reading.book.author }}</div>
+
+    <div class="cr-progress-row">
+      <div class="cr-progress-track">
+        <div class="cr-progress-fill" style="width:{% if continue_reading.percent_complete %}{{ continue_reading.percent_complete }}{% else %}0{% endif %}%;"></div>
+      </div>
+      <span class="cr-progress-label">
+        {% if continue_reading.book.total_pages and continue_reading.book.total_pages > 0 %}
+          Page {{ continue_reading.current_page }} of {{ continue_reading.book.total_pages }} &nbsp;·&nbsp; {{ continue_reading.percent_complete }}%
+        {% else %}
+          Page {{ continue_reading.current_page }}
+        {% endif %}
+      </span>
+    </div>
+
+    <a href="/books/{{ continue_reading.book.pk }}/" class="btn btn-primary cr-btn">▶ Continue Reading</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="card fade-up fade-up-3" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+  <div class="avatar" style="width:52px;height:52px;font-size:22px;">{{ user.username|slice:":1"|upper }}</div>
+  <div>
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:4px;">Welcome back, {{ user.username }}! 👋</div>
+    <div style="color:var(--muted);font-size:14px;">Ready to continue your reading journey?</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="/reading/" class="btn btn-secondary">My Reading</a>
+    <a href="/books/" class="btn btn-primary">Browse Books</a>
+  </div>
+</div>
+{% endif %}
+
+<style>
+/* Continue Reading Banner */
+.cr-banner {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.cr-cover {
+  width: 110px;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, var(--ink), var(--ink-3));
+}
+.cr-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 160px;
+}
+.cr-cover-placeholder {
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+}
+.cr-body {
+  flex: 1;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cr-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.cr-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.cr-author {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.cr-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.cr-progress-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.cr-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2, #f5a623));
+  border-radius: 100px;
+  transition: width .4s ease;
+  min-width: 4px;
+}
+.cr-progress-label {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cr-btn {
+  align-self: flex-start;
+}
+@media (max-width: 500px) {
+  .cr-cover { width: 80px; }
+  .cr-body { padding: 16px; }
+}
+</style>
+{% endblock %}

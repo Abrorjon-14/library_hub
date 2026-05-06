@@ -1,0 +1,18 @@
+from django.contrib import admin
+from .models import Book
+
+
+@admin.register(Book)
+class BookAdmin(admin.ModelAdmin):
+    list_display = ('title', 'author', 'genre', 'views_count', 'created_at', 'has_pdf')
+    list_filter = ('genre',)
+    search_fields = ('title', 'author')
+    readonly_fields = ('created_at', 'views_count')
+    fields = (
+        'title', 'author', 'description', 'cover_image',
+        'pdf_file', 'genre', 'total_pages', 'views_count', 'created_at',
+    )
+
+    @admin.display(boolean=True, description='PDF')
+    def has_pdf(self, obj):
+        return bool(obj.pdf_file)

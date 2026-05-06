@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block title %}Profile — Folio{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up">
+  <h1>My Profile</h1>
+</div>
+
+<div class="profile-grid fade-up fade-up-1">
+
+  <!-- LEFT COLUMN: Profile card -->
+  <div class="profile-left">
+    <div class="card profile-card">
+      <div class="avatar" style="width:80px;height:80px;font-size:34px;margin:0 auto 16px;">{{ user.username|slice:":1"|upper }}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:4px;">{{ user.username }}</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:20px;">📚 Reader</div>
+
+      <div class="divider"></div>
+
+      <div style="text-align:left;display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div class="meta-label">Email</div>
+          <div class="meta-value">{{ user.email|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="meta-label">Member since</div>
+          <div class="meta-value">{{ user.date_joined|date:"N j, Y" }}</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <a href="/users/logout/" class="btn btn-secondary" style="width:100%;justify-content:center;">🚪 Logout</a>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="profile-right">
+
+    <!-- Stats row -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📖</div>
+        <div class="stat-number">{{ books_read }}</div>
+        <div class="stat-label">Books Read</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">❤️</div>
+        <div class="stat-number">{{ wishlist_count }}</div>
+        <div class="stat-label">Wishlist</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✍️</div>
+        <div class="stat-number">{{ reviews_count }}</div>
+        <div class="stat-label">Reviews</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-number">{{ in_progress|length }}</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+    </div>
+
+    <!-- In-progress books -->
+    {% if in_progress %}
+    <div class="card" style="padding:24px;">
+      <div class="section-title">Currently Reading</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for prog in in_progress %}
+        <div class="progress-item">
+          <div class="progress-book-avatar">
+            {% if prog.book.cover_image %}
+              <img src="{{ prog.book.cover_image.url }}" alt="{{ prog.book.title }}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+            {% else %}
+              {{ prog.book.title|slice:":1"|upper }}
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ prog.book.title }}</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">by {{ prog.book.author }}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:4px;background:var(--surface-3);border-radius:100px;overflow:hidden;">
+                <div style="height:100%;width:{% if prog.percent_complete %}{{ prog.percent_complete }}{% else %}0{% endif %}%;background:linear-gradient(90deg,var(--accent),#f5a623);border-radius:100px;min-width:3px;"></div>
+              </div>
+              <span style="font-size:11px;color:var(--muted);white-space:nowrap;">
+                {% if prog.book.total_pages and prog.book.total_pages > 0 %}
+                  p.{{ prog.current_page }}/{{ prog.book.total_pages }} · {{ prog.percent_complete }}%
+                {% else %}
+                  p.{{ prog.current_page }}
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          <a href="/books/{{ prog.book.pk }}/" class="btn btn-secondary" style="font-size:12px;padding:6px 12px;white-space:nowrap;">Continue</a>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px;">
+        <a href="/reading/" style="font-size:13px;color:var(--accent);text-decoration:none;font-weight:500;">View all reading →</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick links -->
+    <div class="card" style="padding:24px;">
+      <div class="section-title">Quick Links</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;">
+        <a href="/reading/" style="text-decoration:none;">
+          <div class="quick-link-tile" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--surface-3)'">
+            <div style="font-size:26px;margin-bottom:6px;">📑</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ink);">My Reading</div>
+          </div>
+        </a>
+        <a href="/reading/?tab=wishlist" style="text-decoration:none;">
+          <div class="quick-link-tile" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--surface-3)'">
+            <div style="font-size:26px;margin-bottom:6px;">❤️</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ink);">Wishlist</div>
+          </div>
+        </a>
+        <a href="/books/" style="text-decoration:none;">
+          <div class="quick-link-tile" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--surface-3)'">
+            <div style="font-size:26px;margin-bottom:6px;">📖</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ink);">Browse Books</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    {% if activity %}
+    <div class="card" style="padding:24px;">
+      <div class="section-title">Recent Activity</div>
+      <ul class="timeline">
+        {% for item in activity %}
+        <li class="timeline-item">
+          <div class="timeline-dot {% if item.type == 'review' %}dot-review{% else %}dot-wishlist{% endif %}">
+            {% if item.type == 'review' %}✍️{% else %}❤️{% endif %}
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-action">
+              {% if item.type == 'review' %}
+                Reviewed <a href="/books/{{ item.book.pk }}/" class="timeline-book-link">{{ item.book.title }}</a>
+                <span class="timeline-rating">{% for i in "12345" %}{% if forloop.counter <= item.rating %}★{% endif %}{% endfor %}</span>
+              {% else %}
+                Added <a href="/books/{{ item.book.pk }}/" class="timeline-book-link">{{ item.book.title }}</a> to wishlist
+              {% endif %}
+            </div>
+            <div class="timeline-date">{{ item.date|date:"N j, Y" }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+  </div><!-- /profile-right -->
+</div><!-- /profile-grid -->
+
+<style>
+.profile-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.profile-left { display: flex; flex-direction: column; gap: 16px; }
+.profile-right { display: flex; flex-direction: column; gap: 16px; }
+
+.profile-card {
+  text-align: center;
+  padding: 36px 24px;
+}
+
+.meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.meta-value {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1.5px solid var(--surface-3);
+  border-radius: var(--radius-sm);
+  padding: 20px 12px;
+  text-align: center;
+  transition: border-color .2s, transform .2s;
+}
+.stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.stat-icon { font-size: 22px; margin-bottom: 8px; }
+.stat-number { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--ink); line-height: 1; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+
+/* In-progress */
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius-sm);
+}
+.progress-book-avatar {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Section title */
+.section-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* Quick link tile */
+.quick-link-tile {
+  background: var(--surface);
+  border: 1.5px solid var(--surface-3);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  transition: border-color .2s, transform .2s;
+}
+.quick-link-tile:hover { transform: translateY(-2px); }
+
+/* Timeline */
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.timeline-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  position: relative;
+  padding-bottom: 18px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 30px;
+  bottom: 0;
+  width: 2px;
+  background: var(--surface-3);
+}
+.timeline-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.dot-review  { background: rgba(232,99,42,.12); border: 1.5px solid rgba(232,99,42,.3); }
+.dot-wishlist{ background: rgba(220,53,69,.10); border: 1.5px solid rgba(220,53,69,.25); }
+.timeline-content { flex: 1; padding-top: 5px; }
+.timeline-action {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.timeline-book-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.timeline-book-link:hover { text-decoration: underline; }
+.timeline-rating { color: #f5a623; font-size: 13px; margin-left: 4px; }
+.timeline-date {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 800px) {
+  .profile-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}

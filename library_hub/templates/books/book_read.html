@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+{% block title %}O'qilmoqda: {{ book.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  #pdf-viewer {
+    background: var(--surface);
+    border: 1px solid var(--surface-3);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+  }
+
+  #pdf-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--surface-3);
+    flex-wrap: wrap;
+  }
+  .tb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: 1.5px solid var(--surface-3);
+    background: var(--surface);
+    color: var(--ink-3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+    white-space: nowrap;
+  }
+  .tb-btn:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .tb-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .tb-sep {
+    width: 1px;
+    height: 22px;
+    background: var(--surface-3);
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+  #page-info {
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 100px;
+    text-align: center;
+  }
+  #zoom-level {
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 46px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  #pdf-scroll {
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+    min-height: 70vh;
+    max-height: 78vh;
+    scroll-behavior: smooth;
+    background: #e5e7eb;
+  }
+  #pdf-canvas {
+    display: block;
+    border-radius: 4px;
+    box-shadow: 0 4px 32px rgba(0,0,0,.22);
+  }
+  #pdf-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 70vh;
+    font-size: 14px;
+    color: var(--muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Yuqori qism -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;" class="fade-up">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <a href="{% url 'book_detail' book.pk %}"
+       style="color:var(--muted);text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:6px;">
+      ← Orqaga
+    </a>
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);">Hozir o'qilmoqda</div>
+      <h1 style="font-family:'DM Serif Display',serif;font-size:20px;line-height:1.2;margin:0;">{{ book.title }}</h1>
+    </div>
+  </div>
+  <span style="font-size:13px;color:var(--muted);">muallif: <strong style="color:var(--ink-3);">{{ book.author }}</strong></span>
+</div>
+
+<!-- Jarayon banneri -->
+{% if user.is_authenticated and progress %}
+  {% if resumed %}
+  <div class="fade-up" style="background:linear-gradient(135deg,rgba(232,99,42,.1),rgba(232,99,42,.05));border:1.5px solid rgba(232,99,42,.25);border-radius:12px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">🔖</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--accent);">Qolgan joydan davom ettirish</div>
+        <div style="font-size:12px;color:var(--muted);"><strong style="color:var(--ink-3);">{{ progress.current_page }}</strong>-sahifada qolgan edingiz
+          {% if book.total_pages %} / {{ book.total_pages }}{% endif %}
+          · oxirgi marta o'qilgan: {{ progress.updated_at|date:"N j, Y" }}
+        </div>
+      </div>
+    </div>
+    {% if progress.percent_complete > 0 %}
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:100px;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;">
+        <div style="width:{{ progress.percent_complete }}%;height:100%;background:var(--accent);border-radius:99px;"></div>
+      </div>
+      <span style="font-size:12px;color:var(--muted);font-weight:600;">{{ progress.percent_complete }}%</span>
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="fade-up" style="background:var(--surface);border:1.5px solid var(--surface-3);border-radius:12px;padding:10px 18px;margin-bottom:14px;font-size:13px;color:var(--muted);">
+    📖 Boshidan boshlanmoqda — o'qigan saytingiz avtomatik saqlanadi.
+  </div>
+  {% endif %}
+{% endif %}
+
+<!-- PDF ko'ruvchi -->
+<div id="pdf-viewer" class="fade-up">
+
+  <!-- Asboblar paneli -->
+  <div id="pdf-toolbar">
+    <button class="tb-btn" id="btn-prev" disabled>← Oldingi</button>
+    <span id="page-info">— / —</span>
+    <button class="tb-btn" id="btn-next" disabled>Keyingi →</button>
+
+    <div class="tb-sep"></div>
+
+    <button class="tb-btn" id="btn-zoom-out" title="Kichraytirish (-)">−</button>
+    <span id="zoom-level">100%</span>
+    <button class="tb-btn" id="btn-zoom-in"  title="Kattalashtirish (+)">+</button>
+    <button class="tb-btn" id="btn-zoom-fit" title="Ekranga moslashtirish">Moslashtirish</button>
+  </div>
+
+  <!-- Canvas maydoni -->
+  <div id="pdf-scroll">
+    <div id="pdf-loading">⏳ PDF yuklanmoqda…</div>
+    <canvas id="pdf-canvas" style="display:none;"></canvas>
+  </div>
+
+</div>
+
+<!-- Sahifani saqlash paneli -->
+{% if user.is_authenticated %}
+<div class="card fade-up" style="padding:14px 20px;display:flex;align-items:center;flex-wrap:wrap;gap:14px;">
+  <span style="font-size:14px;color:var(--muted);font-weight:500;">💾 Sahifani saqlash:</span>
+  <form method="post" style="display:flex;align-items:center;gap:8px;">
+    {% csrf_token %}
+    <input id="save-page-input" type="number" name="current_page" min="1"
+      {% if book.total_pages %}max="{{ book.total_pages }}"{% endif %}
+      value="{% if progress %}{{ progress.current_page }}{% else %}1{% endif %}"
+      style="width:80px;padding:8px 10px;font-size:14px;border-radius:8px;border:1.5px solid var(--surface-3);background:var(--surface);color:var(--ink-3);font-family:'DM Sans',sans-serif;">
+    {% if book.total_pages %}
+    <span style="font-size:13px;color:var(--muted);">/ {{ book.total_pages }}</span>
+    {% endif %}
+    <button type="submit" class="btn btn-primary" style="padding:9px 20px;font-size:13px;">Saqlash</button>
+  </form>
+  <span id="auto-save-status" style="font-size:12px;color:var(--accent);font-weight:600;"></span>
+  {% if progress and progress.updated_at %}
+  <span style="font-size:12px;color:var(--muted);margin-left:auto;">Oxirgi saqlash: {{ progress.updated_at|date:"N j, Y g:i A" }}</span>
+  {% endif %}
+</div>
+{% else %}
+<div class="card fade-up" style="padding:14px 20px;font-size:13px;color:var(--muted);text-align:center;">
+  O'qish jarayonini saqlash uchun <a href="/users/login/" style="color:var(--accent);">kiring</a>.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function () {
+  const PDF_URL    = "{{ book.pdf_file.url }}";
+  const START_PAGE = {{ progress.current_page|default:1 }};
+  const SAVE_URL   = "{% url 'save_reading_progress' book.pk %}";
+  const CSRF       = "{{ csrf_token }}";
+  const IS_AUTH    = {{ user.is_authenticated|yesno:"true,false" }};
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  const canvas     = document.getElementById("pdf-canvas");
+  const ctx        = canvas.getContext("2d");
+  const loading    = document.getElementById("pdf-loading");
+  const scroll     = document.getElementById("pdf-scroll");
+  const pageInfo   = document.getElementById("page-info");
+  const zoomLabel  = document.getElementById("zoom-level");
+  const btnPrev    = document.getElementById("btn-prev");
+  const btnNext    = document.getElementById("btn-next");
+  const btnZoomIn  = document.getElementById("btn-zoom-in");
+  const btnZoomOut = document.getElementById("btn-zoom-out");
+  const btnFit     = document.getElementById("btn-zoom-fit");
+  const saveInput  = document.getElementById("save-page-input");
+  const saveStatus = document.getElementById("auto-save-status");
+
+  let pdfDoc      = null;
+  let currentPage = 1;
+  let rendering   = false;
+  let saveTimer   = null;
+
+  const ZOOM_STEP = 0.2;
+  const ZOOM_MIN  = 0.5;
+  const ZOOM_MAX  = 3.0;
+  let   zoomScale = 1.0;
+
+  function fitScale() {
+    if (!pdfDoc) return 1;
+    return (scroll.clientWidth - 48) / (canvas._baseWidth || 600);
+  }
+
+  function clampZoom(z) {
+    return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+  }
+
+  function renderPage(num, zoom) {
+    if (rendering) return;
+    rendering = true;
+
+    pdfDoc.getPage(num).then(function (page) {
+      const vp0      = page.getViewport({ scale: 1 });
+      const baseW    = vp0.width;
+      canvas._baseWidth = baseW;
+
+      const z        = (zoom !== undefined) ? zoom : zoomScale;
+      const autoFit  = (scroll.clientWidth - 48) / baseW;
+      const scale    = autoFit * z;
+
+      const vp = page.getViewport({ scale });
+      canvas.width  = vp.width;
+      canvas.height = vp.height;
+
+      page.render({ canvasContext: ctx, viewport: vp }).promise.then(function () {
+        rendering   = false;
+        currentPage = num;
+        zoomScale   = z;
+
+        pageInfo.textContent  = num + " / " + pdfDoc.numPages + " sahifa";
+        zoomLabel.textContent = Math.round(z * 100) + "%";
+        btnPrev.disabled      = num <= 1;
+        btnNext.disabled      = num >= pdfDoc.numPages;
+        btnZoomOut.disabled   = z <= ZOOM_MIN;
+        btnZoomIn.disabled    = z >= ZOOM_MAX;
+        if (saveInput) saveInput.value = num;
+
+        scroll.scrollTo({ top: 0, behavior: "smooth" });
+
+        autoSavePage(num);
+      });
+    });
+  }
+
+  function autoSavePage(num) {
+    if (!IS_AUTH) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      if (saveStatus) saveStatus.textContent = "Saqlanmoqda…";
+      fetch(SAVE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF },
+        body: JSON.stringify({ page: num }),
+      })
+      .then(r => r.json())
+      .then(function (data) {
+        if (saveStatus) {
+          saveStatus.textContent = data.saved ? "✓ " + data.page + "-sahifa saqlandi" : "Saqlanmadi";
+          setTimeout(function () { saveStatus.textContent = ""; }, 2000);
+        }
+      })
+      .catch(function () {
+        if (saveStatus) saveStatus.textContent = "⚠ Saqlab bo'lmadi";
+      });
+    }, 1500);
+  }
+
+  pdfjsLib.getDocument(PDF_URL).promise.then(function (pdf) {
+    pdfDoc = pdf;
+    loading.style.display = "none";
+    canvas.style.display  = "block";
+
+    btnPrev.disabled    = false;
+    btnNext.disabled    = false;
+
+    const startAt = Math.min(Math.max(START_PAGE, 1), pdf.numPages);
+    renderPage(startAt, 1.0);
+  }).catch(function (err) {
+    loading.textContent = "⚠️ PDF yuklanmadi. " + err.message;
+  });
+
+  btnPrev.addEventListener("click", function () {
+    if (currentPage > 1) renderPage(currentPage - 1);
+  });
+  btnNext.addEventListener("click", function () {
+    if (currentPage < pdfDoc.numPages) renderPage(currentPage + 1);
+  });
+
+  btnZoomIn.addEventListener("click", function () {
+    renderPage(currentPage, clampZoom(zoomScale + ZOOM_STEP));
+  });
+  btnZoomOut.addEventListener("click", function () {
+    renderPage(currentPage, clampZoom(zoomScale - ZOOM_STEP));
+  });
+  btnFit.addEventListener("click", function () {
+    renderPage(currentPage, 1.0);
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") btnNext.click();
+    if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   btnPrev.click();
+    if (e.key === "+"  || e.key === "=") btnZoomIn.click();
+    if (e.key === "-")                   btnZoomOut.click();
+    if (e.key === "0")                   btnFit.click();
+  });
+
+  scroll.addEventListener("wheel", function (e) {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+    renderPage(currentPage, clampZoom(zoomScale + delta));
+  }, { passive: false });
+
+})();
+</script>
+{% endblock %}

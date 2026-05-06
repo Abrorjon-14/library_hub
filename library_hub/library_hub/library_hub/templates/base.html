@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Folio — Onlayn Kutubxona{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Tokens ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:      #1a1a2e;
+      --ink-2:    #2d2d44;
+      --ink-3:    #4a4a6a;
+      --muted:    #8888a8;
+      --accent:   #e8632a;
+      --accent-2: #f5a623;
+      --surface:  #faf8f5;
+      --surface-2:#f0ece4;
+      --surface-3:#e8e0d0;
+      --white:    #ffffff;
+      --sidebar-w: 230px;
+      --topbar-h:  64px;
+      --radius:   12px;
+      --radius-sm: 8px;
+      --shadow:   0 2px 12px rgba(26,26,46,.08);
+      --shadow-md:0 8px 32px rgba(26,26,46,.14);
+      --shadow-lg:0 20px 60px rgba(26,26,46,.18);
+      --transition: 0.2s cubic-bezier(.4,0,.2,1);
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      color: var(--ink);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--ink);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+      transition: transform var(--transition);
+    }
+
+    .sidebar-brand {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .sidebar-brand a {
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(232,99,42,.4);
+    }
+    .brand-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--white);
+      letter-spacing: -0.5px;
+    }
+
+    .sidebar-nav {
+      padding: 20px 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.3);
+      padding: 16px 12px 6px;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: rgba(255,255,255,.65);
+      font-size: 14px;
+      font-weight: 400;
+      transition: all var(--transition);
+      position: relative;
+    }
+    .sidebar-link:hover {
+      background: rgba(255,255,255,.07);
+      color: var(--white);
+    }
+    .sidebar-link.active {
+      background: var(--accent);
+      color: var(--white);
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(232,99,42,.35);
+    }
+    .sidebar-link .icon {
+      font-size: 17px;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+    }
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600;
+      font-size: 13px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .sidebar-user-info { flex: 1; min-width: 0; }
+    .sidebar-user-name { font-size: 13px; font-weight: 500; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-user-role { font-size: 11px; color: rgba(255,255,255,.4); }
+
+    /* ── Main Layout ──────────────────────────────────────── */
+    .main-wrapper {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ───────────────────────────────────────────── */
+    .topbar {
+      height: var(--topbar-h);
+      background: var(--white);
+      border-bottom: 1px solid var(--surface-3);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 32px;
+      position: sticky; top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 0 var(--surface-3);
+    }
+    .topbar-search {
+      flex: 1;
+      max-width: 440px;
+      position: relative;
+    }
+    .topbar-search input {
+      width: 100%;
+      padding: 10px 16px 10px 42px;
+      border: 1.5px solid var(--surface-3);
+      border-radius: 100px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      background: var(--surface);
+      color: var(--ink);
+      outline: none;
+      transition: all var(--transition);
+    }
+    .topbar-search input:focus {
+      border-color: var(--accent);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(232,99,42,.12);
+    }
+    .topbar-search input::placeholder { color: var(--muted); }
+    .search-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; color: var(--muted); pointer-events: none;
+    }
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px 6px 6px;
+      border-radius: 100px;
+      background: var(--surface);
+      border: 1.5px solid var(--surface-3);
+      text-decoration: none;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 500;
+      transition: all var(--transition);
+    }
+    .topbar-user:hover { border-color: var(--accent); background: var(--white); }
+    .topbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all var(--transition);
+      border: none;
+    }
+    .topbar-btn-outline {
+      border: 1.5px solid var(--surface-3);
+      background: transparent;
+      color: var(--ink-3);
+    }
+    .topbar-btn-outline:hover { border-color: var(--ink-3); background: var(--surface); }
+    .topbar-btn-primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 10px rgba(232,99,42,.35);
+    }
+    .topbar-btn-primary:hover { background: #d4551e; box-shadow: 0 4px 16px rgba(232,99,42,.45); }
+
+    /* ── Page Content ─────────────────────────────────────── */
+    .page-content {
+      flex: 1;
+      padding: 36px 36px 60px;
+    }
+
+    /* ── Messages ─────────────────────────────────────────── */
+    .messages { list-style: none; margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
+    .messages li {
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .messages .success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+    .messages .error   { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+    .messages .info    { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+    .messages .warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+
+    /* ── Page Header ──────────────────────────────────────── */
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 32px;
+      letter-spacing: -0.5px;
+      color: var(--ink);
+      line-height: 1.15;
+    }
+    .page-header p { color: var(--muted); font-size: 15px; margin-top: 6px; }
+
+    /* ── Cards ────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--surface-2);
+    }
+
+    /* ── Book Grid Cards ──────────────────────────────────── */
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .book-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-2);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .book-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    .book-cover {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      display: block;
+    }
+    .book-cover-placeholder {
+      width: 100%;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      background: linear-gradient(135deg, var(--ink) 0%, var(--ink-3) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .book-cover-placeholder::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.03) 10px, rgba(255,255,255,.03) 20px);
+    }
+    .book-card-body { padding: 14px 16px 18px; flex: 1; display: flex; flex-direction: column; }
+    .book-genre-tag {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+    .book-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      line-height: 1.35;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+    .book-author { font-size: 12px; color: var(--muted); }
+    .book-stats {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── Forms ────────────────────────────────────────────── */
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-weight: 500; font-size: 13px; color: var(--ink-3); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .5px; }
+    .form-control {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--surface-3);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--surface);
+      outline: none;
+      transition: all var(--transition);
+    }
+    .form-control:focus { border-color: var(--accent); background: var(--white); box-shadow: 0 0 0 3px rgba(232,99,42,.1); }
+    .form-control::placeholder { color: var(--muted); }
+    .form-help { font-size: 12px; color: var(--muted); margin-top: 5px; }
+    .errorlist { list-style: none; color: #dc2626; font-size: 12px; margin-top: 5px; }
+    .errorlist li::before { content: '⚠ '; }
+    /* Style Django's auto-generated inputs */
+    input[type=text], input[type=email], input[type=password], input[type=number], textarea, select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--surface-3);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--surface);
+      outline: none;
+      transition: all var(--transition);
+    }
+    input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, input[type=number]:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(232,99,42,.1);
+    }
+    textarea { resize: vertical; min-height: 110px; }
+
+    /* ── Buttons ──────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 22px;
+      border-radius: 100px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: all var(--transition);
+    }
+    .btn-primary { background: var(--accent); color: white; box-shadow: 0 2px 10px rgba(232,99,42,.35); }
+    .btn-primary:hover { background: #d4551e; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(232,99,42,.4); }
+    .btn-secondary { background: var(--surface-2); color: var(--ink-3); border: 1.5px solid var(--surface-3); }
+    .btn-secondary:hover { background: var(--surface-3); color: var(--ink); }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover { background: #fecaca; }
+    /* legacy alias */
+    .btn:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost) { background: var(--accent); color: white; box-shadow: 0 2px 10px rgba(232,99,42,.3); }
+    .btn:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost):hover { background: #d4551e; }
+
+    /* ── Chips / Tags ─────────────────────────────────────── */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--surface-2);
+      color: var(--ink-3);
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+    }
+    .chip:hover, .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* ── Stats Row ────────────────────────────────────────── */
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .stat-pill strong { color: var(--ink); font-weight: 600; }
+
+    /* ── Stars ────────────────────────────────────────────── */
+    .stars { color: #f59e0b; letter-spacing: 1px; }
+    .stars-empty { color: var(--surface-3); }
+
+    /* ── Review Cards ─────────────────────────────────────── */
+    .review-card {
+      background: var(--white);
+      border: 1px solid var(--surface-2);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+    }
+    .review-card.own { border-left: 3px solid var(--accent); }
+
+    /* ── Divider ──────────────────────────────────────────── */
+    .divider { height: 1px; background: var(--surface-2); margin: 24px 0; }
+
+    /* ── Mobile burger ────────────────────────────────────── */
+    .burger { display: none; background: none; border: none; cursor: pointer; padding: 4px; font-size: 22px; color: var(--ink); }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-wrapper { margin-left: 0; }
+      .burger { display: block; }
+      .page-content { padding: 20px 16px 40px; }
+      .topbar { padding: 0 16px; }
+      .book-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+    }
+
+    /* ── Animations ───────────────────────────────────────── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none;} }
+    .fade-up { animation: fadeUp .35s ease both; }
+    .fade-up-1 { animation-delay: .05s; }
+    .fade-up-2 { animation-delay: .1s; }
+    .fade-up-3 { animation-delay: .15s; }
+
+    /* ── Sidebar overlay (mobile) ─────────────────────────── */
+    .sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 99;
+    }
+    .sidebar-overlay.show { display: block; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <a href="/">
+      <div class="brand-icon">📚</div>
+      <span class="brand-text">Folio</span>
+    </a>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="sidebar-section-label">Bo'limlar</div>
+    <a href="/" class="sidebar-link {% block nav_home %}{% endblock %}">
+      <span class="icon">🏠</span> Bosh sahifa
+    </a>
+    <a href="/books/" class="sidebar-link {% block nav_books %}{% endblock %}">
+      <span class="icon">📖</span> Kitoblarni ko'rish
+    </a>
+    {% if request.resolver_match.url_name != 'my_reading' %}
+    <a href="/books/?genre=fiction" class="sidebar-link">
+      <span class="icon">🔖</span> Kategoriyalar
+    </a>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <div class="sidebar-section-label">Mening kutubxonam</div>
+    {% if request.resolver_match.url_name != 'my_reading' %}
+    <a href="/reading/" class="sidebar-link {% block nav_reading %}{% endblock %}">
+      <span class="icon">📑</span> O'quv bo'limi
+    </a>
+    <a href="/reading/?tab=wishlist" class="sidebar-link">
+      <span class="icon">❤️</span> Yoqtirganlarim
+    </a>
+    {% endif %}
+    <a href="/users/profile/" class="sidebar-link {% block nav_profile %}{% endblock %}">
+      <span class="icon">👤</span> Profil
+    </a>
+    {% else %}
+    <div class="sidebar-section-label">Hisob</div>
+    <a href="/users/login/" class="sidebar-link {% block nav_login %}{% endblock %}">
+      <span class="icon">🔑</span> Kirish
+    </a>
+    <a href="/users/register/" class="sidebar-link {% block nav_register %}{% endblock %}">
+      <span class="icon">✨</span> Ro'yxatdan o'tish
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-footer">
+    {% if user.is_authenticated %}
+    <div class="sidebar-user">
+      <div class="avatar">{{ user.username|slice:":1"|upper }}</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">{{ user.username }}</div>
+        <div class="sidebar-user-role">O'quvchi</div>
+      </div>
+    </div>
+    <a href="/users/logout/" class="sidebar-link" style="margin-top:4px;">
+      <span class="icon">🚪</span> Chiqish
+    </a>
+    {% else %}
+    <div style="padding:8px 12px;font-size:12px;color:rgba(255,255,255,.35);">Tizimga kirmagan</div>
+    {% endif %}
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<div class="main-wrapper">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="burger" onclick="toggleSidebar()">☰</button>
+
+    <form class="topbar-search" method="get" action="/books/">
+      <span class="search-icon"></span>
+      <input type="text" name="q" placeholder="Kitob, muallif qidirish…" value="{% block search_value %}{% endblock %}">
+    </form>
+
+    <div class="topbar-right">
+      {% if user.is_authenticated %}
+        <a href="/reading/" class="topbar-btn topbar-btn-outline">📑 O'quv bo'limi</a>
+        <a href="/users/profile/" class="topbar-user">
+          <div class="avatar" style="width:28px;height:28px;font-size:11px;">{{ user.username|slice:":1"|upper }}</div>
+          {{ user.username }}
+        </a>
+      {% else %}
+        <a href="/users/login/" class="topbar-btn topbar-btn-outline">Kirish</a>
+        <a href="/users/register/" class="topbar-btn topbar-btn-primary">Ro'yxatdan o'tish</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Page -->
+  <main class="page-content">
+    {% if messages %}
+    <ul class="messages fade-up">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('show');
+  }
+  // Mark active sidebar links
+  const path = window.location.pathname;
+  document.querySelectorAll('.sidebar-link').forEach(a => {
+    if (a.getAttribute('href') === path) a.classList.add('active');
+  });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Sharh — Folio{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;">
+  <a href="/books/{{ book.pk }}/" style="color:var(--muted);text-decoration:none;font-size:14px;">← {{ book.title }}ga qaytish</a>
+</div>
+
+<div style="max-width:540px;" class="fade-up">
+  <div class="page-header">
+    <h1>{{ action }} Sharh</h1>
+    <p>{{ book.title }} <span style="color:var(--muted);">— {{ book.author }}</span></p>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Yulduz bahosi -->
+      <div class="form-group">
+        <label class="form-label">Bahongiz</label>
+        <div id="star-widget" style="display:flex;gap:4px;margin-bottom:8px;">
+          {% for radio in form.rating %}
+          <label class="star-label" data-value="{{ radio.data.value }}" title="{{ radio.data.value }} yulduz" style="cursor:pointer;font-size:36px;color:var(--surface-3);transition:color .15s;user-select:none;">
+            {{ radio.tag }}★
+          </label>
+          {% endfor %}
+        </div>
+        {% if form.rating.errors %}<ul class="errorlist">{% for e in form.rating.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+
+      <!-- Sharh matni -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.comment.id_for_label }}">Sharhingiz</label>
+        {{ form.comment }}
+        {% if form.comment.errors %}<ul class="errorlist">{% for e in form.comment.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button type="submit" class="btn btn-primary" style="padding:12px 28px;">{{ action }} Sharh</button>
+        <a href="/books/{{ book.pk }}/" class="btn btn-secondary" style="padding:12px 20px;">Bekor qilish</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  input[type="radio"] { display:none; }
+  .star-label { display:inline-block; }
+</style>
+
+<script>
+  const labels = document.querySelectorAll('.star-label');
+  let selected = 0;
+
+  const checked = document.querySelector('input[type=radio]:checked');
+  if (checked) {
+    selected = parseInt(checked.value);
+    updateStars(selected);
+  }
+
+  labels.forEach(label => {
+    const val = parseInt(label.dataset.value);
+    label.addEventListener('mouseenter', () => updateStars(val));
+    label.addEventListener('mouseleave', () => updateStars(selected));
+    label.addEventListener('click', () => { selected = val; updateStars(val); });
+  });
+
+  function updateStars(n) {
+    labels.forEach(l => {
+      l.style.color = parseInt(l.dataset.value) <= n ? '#f59e0b' : 'var(--surface-3)';
+    });
+  }
+</script>
+{% endblock %}

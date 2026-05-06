@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Kitoblar — Folio{% endblock %}
+{% block nav_books %}active{% endblock %}
+{% block search_value %}{{ query }}{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up">
+  <h1>Kitoblar</h1>
+  <p>To'plamda {{ page_obj.paginator.count }} ta kitob mavjud</p>
+</div>
+
+<!-- Janr filtri -->
+<div class="fade-up fade-up-1" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;align-items:center;">
+  <a href="/books/" class="chip {% if not selected_genre %}active{% endif %}">Barchasi</a>
+  {% for value, label in genres %}
+    <a href="/books/?genre={{ value }}{% if query %}&q={{ query }}{% endif %}" class="chip {% if selected_genre == value %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<!-- Qidiruv natijasi -->
+{% if query %}
+<div style="margin-bottom:20px;padding:12px 16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;" class="fade-up fade-up-1">
+  <span><strong>"{{ query }}"</strong> bo'yicha natijalar{% if selected_genre %} — <strong>{{ selected_genre|title }}</strong> janrida{% endif %}</span>
+  <a href="/books/{% if selected_genre %}?genre={{ selected_genre }}{% endif %}" style="color:var(--accent);font-size:13px;text-decoration:none;">✕ Tozalash</a>
+</div>
+{% endif %}
+
+<!-- Kitoblar panjarasi -->
+{% if page_obj.object_list %}
+<div class="book-grid fade-up fade-up-2">
+  {% for book in page_obj %}
+  <a href="/books/{{ book.pk }}/" class="book-card">
+
+    <!-- Muqova -->
+    {% if book.cover_image %}
+      <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="book-cover">
+    {% else %}
+      <div class="book-cover-placeholder">📖</div>
+    {% endif %}
+
+    <!-- Karta tanasi -->
+    <div class="book-card-body">
+      <div class="book-genre-tag">{{ book.get_genre_display }}</div>
+      <div class="book-title">{{ book.title }}</div>
+      <div class="book-author">{{ book.author }}</div>
+      <div class="book-stats">
+        <span>👁 {{ book.views_count }}</span>
+        <span>💬 {{ book.reviews.count }}</span>
+      </div>
+    </div>
+
+    <!-- Hover ko'rinishi -->
+    <div class="book-preview">
+      <div class="book-preview-genre">{{ book.get_genre_display }}</div>
+      <div class="book-preview-title">{{ book.title }}</div>
+      <div class="book-preview-author">muallif: {{ book.author }}</div>
+
+      {% if book.avg_rating %}
+      <div class="book-preview-rating">
+        <span class="preview-stars">
+          {% for i in "12345" %}{% if forloop.counter <= book.avg_rating|floatformat:"0"|add:"0" %}★{% else %}☆{% endif %}{% endfor %}
+        </span>
+        <span class="preview-rating-num">{{ book.avg_rating|floatformat:1 }}</span>
+      </div>
+      {% else %}
+      <div class="book-preview-rating" style="color:rgba(255,255,255,.4);font-size:12px;">Hali baho yo'q</div>
+      {% endif %}
+
+      {% if book.description %}
+      <p class="book-preview-desc">{{ book.description|truncatechars:120 }}</p>
+      {% endif %}
+
+      <div class="book-preview-cta">Kitobni ko'rish →</div>
+    </div>
+
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Sahifalash -->
+{% if page_obj.has_other_pages %}
+<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:40px;" class="fade-up">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_genre %}&genre={{ selected_genre }}{% endif %}" class="btn btn-secondary" style="padding:9px 20px;">← Oldingi</a>
+  {% endif %}
+  <span style="font-size:14px;color:var(--muted);padding:0 8px;"><strong>{{ page_obj.number }}</strong> / {{ page_obj.paginator.num_pages }} sahifa</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_genre %}&genre={{ selected_genre }}{% endif %}" class="btn btn-secondary" style="padding:9px 20px;">Keyingi →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card fade-up" style="text-align:center;padding:72px 40px;">
+  <div style="font-size:56px;margin-bottom:16px;">📭</div>
+  <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:8px;">Kitob topilmadi</div>
+  <div style="color:var(--muted);margin-bottom:24px;">Qidiruvni o'zgartiring yoki boshqa janrni ko'ring.</div>
+  <a href="/books/" class="btn btn-primary">Filtrlarni tozalash</a>
+</div>
+{% endif %}
+
+<style>
+.book-card {
+  position: relative;
+}
+
+.book-preview {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(26,18,46,.97) 0%, rgba(45,28,75,.97) 100%);
+  border-radius: var(--radius);
+  padding: 20px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(6px) scale(.98);
+  transition: opacity .22s ease, transform .22s ease;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.book-card:hover .book-preview {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+}
+
+.book-preview-genre {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent, #e8632a);
+  margin-bottom: 2px;
+}
+
+.book-preview-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  color: #fff;
+  line-height: 1.25;
+}
+
+.book-preview-author {
+  font-size: 12px;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 4px;
+}
+
+.book-preview-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.preview-stars {
+  color: #f5a623;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.preview-rating-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5a623;
+}
+
+.book-preview-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255,255,255,.65);
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  margin: 4px 0 0;
+}
+
+.book-preview-cta {
+  margin-top: auto;
+  padding-top: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: var(--accent, #e8632a);
+  text-transform: uppercase;
+}
+
+@media (hover: none) {
+  .book-preview { display: none; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }} — Folio{% endblock %}
+{% block nav_books %}active{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;" class="fade-up">
+  <a href="/books/" style="color:var(--muted);text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:6px;">
+    ← Back to Books
+  </a>
+</div>
+
+<!-- Book Hero -->
+<div class="card fade-up" style="padding:0;overflow:hidden;margin-bottom:28px;">
+  <div style="display:flex;flex-wrap:wrap;">
+    <!-- Cover -->
+    <div style="width:240px;flex-shrink:0;">
+      {% if book.cover_image %}
+        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" style="width:100%;height:100%;min-height:300px;object-fit:cover;display:block;">
+      {% else %}
+        <div style="width:100%;min-height:300px;background:linear-gradient(160deg,var(--ink) 0%,var(--ink-3) 100%);display:flex;align-items:center;justify-content:center;font-size:80px;">📖</div>
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div style="flex:1;padding:36px;min-width:240px;display:flex;flex-direction:column;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">{{ book.get_genre_display }}</div>
+      <h1 style="font-family:'DM Serif Display',serif;font-size:30px;letter-spacing:-.5px;line-height:1.2;margin-bottom:8px;">{{ book.title }}</h1>
+      <p style="font-size:15px;color:var(--muted);margin-bottom:20px;">by <strong style="color:var(--ink-3);">{{ book.author }}</strong></p>
+
+      <!-- Stats -->
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:24px;">
+        <span class="stat-pill"><strong>{{ book.views_count }}</strong> views</span>
+        <span class="stat-pill"><strong>{{ reviews.count }}</strong> reviews</span>
+        {% if avg_rating %}
+        <span class="stat-pill">
+          <span class="stars">{% for i in "12345" %}{% if forloop.counter <= avg_rating|floatformat:"0"|add:"0" %}★{% else %}☆{% endif %}{% endfor %}</span>
+          <strong>{{ avg_rating|floatformat:1 }}</strong>
+        </span>
+        {% endif %}
+      </div>
+
+      {% if book.description %}
+      <p style="line-height:1.8;color:var(--ink-3);font-size:15px;margin-bottom:24px;flex:1;">{{ book.description }}</p>
+      {% endif %}
+
+      <!-- Actions -->
+      {% if user.is_authenticated %}
+      <div style="border-top:1px solid var(--surface-2);padding-top:20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+        <!-- Wishlist -->
+        <form method="post" action="/reading/wishlist/{{ book.pk }}/">
+          {% csrf_token %}
+          <button type="submit" class="btn {% if in_wishlist %}btn-secondary{% endif %}" style="{% if in_wishlist %}{% else %}background:var(--surface-2);color:var(--ink-3);{% endif %}">
+            {% if in_wishlist %}💔 Remove Wishlist{% else %}❤️ Add to Wishlist{% endif %}
+          </button>
+        </form>
+        <!-- Progress -->
+        <form method="post" action="/reading/progress/{{ book.pk }}/" style="display:flex;gap:8px;align-items:center;">
+          {% csrf_token %}
+          <span style="font-size:13px;color:var(--muted);">📄 Page</span>
+          <input type="number" name="current_page" min="1"
+                 value="{% if progress %}{{ progress.current_page }}{% else %}1{% endif %}"
+                 style="width:72px;padding:8px 10px;font-size:13px;">
+          <button type="submit" class="btn btn-primary" style="padding:9px 18px;">Save</button>
+        </form>
+      </div>
+      {% if progress %}
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);">Last saved: page {{ progress.current_page }} · {{ progress.updated_at|date:"N j, Y" }}</div>
+      {% endif %}
+      {% else %}
+      <div style="border-top:1px solid var(--surface-2);padding-top:16px;">
+        <p style="font-size:14px;color:var(--muted);">
+          <a href="/users/login/" style="color:var(--accent);">Log in</a> to save progress and add to wishlist.
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Reviews Section -->
+<div class="fade-up fade-up-2">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+    <h2 style="font-family:'DM Serif Display',serif;font-size:24px;">
+      Reviews <span style="font-size:16px;font-family:'DM Sans',sans-serif;color:var(--muted);font-weight:400;">({{ reviews.count }})</span>
+    </h2>
+    {% if user.is_authenticated and not user_review %}
+      <a href="/reviews/add/{{ book.pk }}/" class="btn btn-primary">✏️ Write a Review</a>
+    {% endif %}
+  </div>
+
+  {% if reviews %}
+  <div style="display:flex;flex-direction:column;gap:14px;">
+    {% for review in reviews %}
+    <div class="review-card {% if review.user == user %}own{% endif %}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="avatar" style="width:36px;height:36px;font-size:14px;">{{ review.user.username|slice:":1"|upper }}</div>
+          <div>
+            <span style="font-weight:600;font-size:14px;">{{ review.user.username }}</span>
+            {% if review.user == user %}<span style="font-size:11px;background:rgba(232,99,42,.12);color:var(--accent);padding:2px 8px;border-radius:100px;margin-left:6px;font-weight:600;">You</span>{% endif %}
+            <div class="stars" style="font-size:15px;margin-top:1px;">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}<span class="stars-empty">★</span>{% endif %}{% endfor %}</div>
+          </div>
+        </div>
+        <span style="font-size:12px;color:var(--muted);">{{ review.created_at|date:"N j, Y" }}</span>
+      </div>
+
+      <p style="line-height:1.75;color:var(--ink-3);font-size:14px;margin-bottom:14px;">{{ review.comment }}</p>
+
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        {% if user.is_authenticated %}
+        <form method="post" action="/reviews/like/{{ review.pk }}/">
+          {% csrf_token %}
+          <button type="submit" style="display:inline-flex;align-items:center;gap:6px;background:{% if review.pk in liked_review_ids %}#fee2e2{% else %}var(--surface){% endif %};border:1.5px solid {% if review.pk in liked_review_ids %}#fca5a5{% else %}var(--surface-3){% endif %};border-radius:100px;padding:5px 14px;cursor:pointer;font-size:12px;color:{% if review.pk in liked_review_ids %}#dc2626{% else %}var(--muted){% endif %};font-family:'DM Sans',sans-serif;transition:all .2s;">
+            {% if review.pk in liked_review_ids %}❤️{% else %}🤍{% endif %} {{ review.like_count }} like{{ review.like_count|pluralize }}
+          </button>
+        </form>
+        {% else %}
+        <span style="font-size:12px;color:var(--muted);">❤️ {{ review.like_count }} like{{ review.like_count|pluralize }}</span>
+        {% endif %}
+
+        {% if review.user == user %}
+        <a href="/reviews/edit/{{ review.pk }}/" style="font-size:13px;color:var(--accent);text-decoration:none;font-weight:500;">✏️ Edit</a>
+        <form method="post" action="/reviews/delete/{{ review.pk }}/" style="display:inline;" onsubmit="return confirm('Delete this review?')">
+          {% csrf_token %}
+          <button type="submit" style="background:none;border:none;cursor:pointer;font-size:13px;color:#dc2626;font-family:'DM Sans',sans-serif;font-weight:500;">🗑 Delete</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card" style="text-align:center;padding:56px 40px;">
+    <div style="font-size:48px;margin-bottom:14px;">💬</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:8px;">No reviews yet</div>
+    <div style="color:var(--muted);font-size:14px;margin-bottom:20px;">Be the first to share your thoughts!</div>
+    {% if user.is_authenticated %}
+    <a href="/reviews/add/{{ book.pk }}/" class="btn btn-primary">Write a Review</a>
+    {% else %}
+    <a href="/users/login/" class="btn btn-secondary">Log in to Review</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

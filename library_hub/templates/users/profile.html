@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% block title %}Profil — Folio{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up">
+  <h1>Mening profilim</h1>
+</div>
+
+<div class="profile-grid fade-up fade-up-1">
+
+  <!-- CHAP USTUN: Profil kartasi -->
+  <div class="profile-left">
+    <div class="card profile-card">
+      <div class="avatar" style="width:80px;height:80px;font-size:34px;margin:0 auto 16px;">{{ user.username|slice:":1"|upper }}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:4px;">{{ user.username }}</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:20px;">📚 O'quvchi</div>
+
+      <div class="divider"></div>
+
+      <div style="text-align:left;display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div class="meta-label">Elektron pochta</div>
+          <div class="meta-value">{{ user.email|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="meta-label">A'zolik sanasi</div>
+          <div class="meta-value">{{ user.date_joined|date:"N j, Y" }}</div>
+        </div>
+        {% if streak and streak.current_streak > 0 %}
+        <div class="streak-badge">
+          <span class="streak-fire">🔥</span>
+          <div>
+            <div class="streak-count">{{ streak.current_streak }} kunlik seriya</div>
+            {% if streak.longest_streak > streak.current_streak %}
+            <div class="streak-best">Rekord: {{ streak.longest_streak }} kun</div>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div style="font-size:13px;color:var(--muted);text-align:center;">
+          Seriyangizni boshlash uchun o'qish jarayonini saqlang 🔥
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="divider"></div>
+      <a href="/users/logout/" class="btn btn-secondary" style="width:100%;justify-content:center;">🚪 Chiqish</a>
+    </div>
+  </div>
+
+  <!-- O'NG USTUN -->
+  <div class="profile-right">
+
+    <!-- Statistika qatori -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-number">{{ books_read }}</div>
+        <div class="stat-label">Boshlangan kitoblar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-number">{{ books_finished }}</div>
+        <div class="stat-label">Tugallangan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📄</div>
+        <div class="stat-number">{{ total_pages_read }}</div>
+        <div class="stat-label">O'qilgan sahifalar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-number">{{ active_days }}</div>
+        <div class="stat-label">Faol kunlar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-number">{{ avg_pages_per_day }}</div>
+        <div class="stat-label">Sahifa / kun</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">❤️</div>
+        <div class="stat-number">{{ wishlist_count }}</div>
+        <div class="stat-label">Xohishlar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✍️</div>
+        <div class="stat-number">{{ reviews_count }}</div>
+        <div class="stat-label">Sharhlar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-number">{{ in_progress|length }}</div>
+        <div class="stat-label">O'qilmoqda</div>
+      </div>
+    </div>
+
+    <!-- O'qish ma'lumotlari -->
+    {% if total_pages_read or favourite_genre %}
+    <div class="card" style="padding:18px 24px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;">
+      {% if favourite_genre %}
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🏷️</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Sevimli janr</div>
+          <div style="font-size:15px;font-weight:600;color:var(--ink);">{{ favourite_genre }}</div>
+        </div>
+      </div>
+      <div class="tb-sep" style="height:36px;width:1px;background:var(--surface-3);"></div>
+      {% endif %}
+      {% if total_pages_read %}
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">📖</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Jami sahifalar</div>
+          <div style="font-size:15px;font-weight:600;color:var(--ink);">{{ total_pages_read }} sahifa o'qildi</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if active_days %}
+      <div class="tb-sep" style="height:36px;width:1px;background:var(--surface-3);"></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🗓️</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">O'qish sur'ati</div>
+          <div style="font-size:15px;font-weight:600;color:var(--ink);">{{ active_days }} kun davomida ~{{ avg_pages_per_day }} sahifa/kun</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- O'qilayotgan kitoblar -->
+    {% if in_progress %}
+    <div class="card" style="padding:24px;">
+      <div class="section-title">Hozir o'qilmoqda</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for prog in in_progress %}
+        <div class="progress-item">
+          <div class="progress-book-avatar">
+            {% if prog.book.cover_image %}
+              <img src="{{ prog.book.cover_image.url }}" alt="{{ prog.book.title }}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+            {% else %}
+              {{ prog.book.title|slice:":1"|upper }}
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ prog.book.title }}</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">{{ prog.book.author }}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:4px;background:var(--surface-3);border-radius:100px;overflow:hidden;">
+                <div style="height:100%;width:{% if prog.percent_complete %}{{ prog.percent_complete }}{% else %}0{% endif %}%;background:linear-gradient(90deg,var(--accent),#f5a623);border-radius:100px;min-width:3px;"></div>
+              </div>
+              <span style="font-size:11px;color:var(--muted);white-space:nowrap;">
+                {% if prog.book.total_pages and prog.book.total_pages > 0 %}
+                  {{ prog.current_page }}/{{ prog.book.total_pages }} sahifa · {{ prog.percent_complete }}%
+                {% else %}
+                  {{ prog.current_page }}-sahifa
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          <a href="/books/{{ prog.book.pk }}/" class="btn btn-secondary" style="font-size:12px;padding:6px 12px;white-space:nowrap;">Davom ettirish</a>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px;">
+        <a href="/reading/" style="font-size:13px;color:var(--accent);text-decoration:none;font-weight:500;">Barcha o'qishlarni ko'rish →</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tez havolalar -->
+    <div class="card" style="padding:24px;">
+      <div class="section-title">Tez havolalar</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;">
+        <a href="/reading/" style="text-decoration:none;">
+          <div class="quick-link-tile" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--surface-3)'">
+            <div style="font-size:26px;margin-bottom:6px;">📑</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ink);">O'qishlarim</div>
+          </div>
+        </a>
+        <a href="/reading/?tab=wishlist" style="text-decoration:none;">
+          <div class="quick-link-tile" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--surface-3)'">
+            <div style="font-size:26px;margin-bottom:6px;">❤️</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ink);">Xohishlar</div>
+          </div>
+        </a>
+        <a href="/books/" style="text-decoration:none;">
+          <div class="quick-link-tile" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--surface-3)'">
+            <div style="font-size:26px;margin-bottom:6px;">📖</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ink);">Kitoblar</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- So'nggi faoliyat -->
+    {% if activity %}
+    <div class="card" style="padding:24px;">
+      <div class="section-title">So'nggi faoliyat</div>
+      <ul class="timeline">
+        {% for item in activity %}
+        <li class="timeline-item">
+          <div class="timeline-dot {% if item.type == 'review' %}dot-review{% else %}dot-wishlist{% endif %}">
+            {% if item.type == 'review' %}✍️{% else %}❤️{% endif %}
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-action">
+              {% if item.type == 'review' %}
+                <a href="/books/{{ item.book.pk }}/" class="timeline-book-link">{{ item.book.title }}</a> kitobiga sharh yozdi
+                <span class="timeline-rating">{% for i in "12345" %}{% if forloop.counter <= item.rating %}★{% endif %}{% endfor %}</span>
+              {% else %}
+                <a href="/books/{{ item.book.pk }}/" class="timeline-book-link">{{ item.book.title }}</a> xohishlarga qo'shildi
+              {% endif %}
+            </div>
+            <div class="timeline-date">{{ item.date|date:"N j, Y" }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<style>
+.profile-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.profile-left { display: flex; flex-direction: column; gap: 16px; }
+.profile-right { display: flex; flex-direction: column; gap: 16px; }
+
+.profile-card {
+  text-align: center;
+  padding: 36px 24px;
+}
+
+.meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.meta-value {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1.5px solid var(--surface-3);
+  border-radius: var(--radius-sm);
+  padding: 20px 12px;
+  text-align: center;
+  transition: border-color .2s, transform .2s;
+}
+.stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.stat-icon { font-size: 22px; margin-bottom: 8px; }
+.stat-number { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--ink); line-height: 1; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius-sm);
+}
+.progress-book-avatar {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.quick-link-tile {
+  background: var(--surface);
+  border: 1.5px solid var(--surface-3);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  transition: border-color .2s, transform .2s;
+}
+.quick-link-tile:hover { transform: translateY(-2px); }
+
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(232,99,42,.12), rgba(245,166,35,.12));
+  border: 1.5px solid rgba(232,99,42,.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.streak-fire { font-size: 28px; line-height: 1; }
+.streak-count { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--ink); }
+.streak-best  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.timeline-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  position: relative;
+  padding-bottom: 18px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 30px;
+  bottom: 0;
+  width: 2px;
+  background: var(--surface-3);
+}
+.timeline-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.dot-review  { background: rgba(232,99,42,.12); border: 1.5px solid rgba(232,99,42,.3); }
+.dot-wishlist{ background: rgba(220,53,69,.10); border: 1.5px solid rgba(220,53,69,.25); }
+.timeline-content { flex: 1; padding-top: 5px; }
+.timeline-action {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.timeline-book-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.timeline-book-link:hover { text-decoration: underline; }
+.timeline-rating { color: #f5a623; font-size: 13px; margin-left: 4px; }
+.timeline-date {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 800px) {
+  .profile-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
